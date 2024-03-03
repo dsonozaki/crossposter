@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import traceback
 from aiogram import Bot as tBot
 from aiogram.types import InputMediaPhoto, InputMediaDocument
@@ -7,12 +8,17 @@ from vkbottle.bot import Bot
 from vkbottle_types import GroupTypes
 from vkbottle_types.events import GroupEventType, WallPostNew
 from vkbottle_types.objects import WallPostType
+from dotenv import load_dotenv
 import re
 
-chat = "CHAT_ID"
-poster = tBot("BOT_TOKEN")
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
+LONGPOLL_TOKEN = os.getenv("LONGPOLL_TOKEN")
+
+poster = tBot(BOT_TOKEN)
 seeker = Bot(
-  token="LONGPOLL_TOKEN")
+  token=LONGPOLL_TOKEN)
 logging.basicConfig(level=logging.WARNING, filename='./crosspost_log.txt',
                     format='%(asctime)s %(levelname)s:%(message)s')
 
@@ -50,7 +56,7 @@ async def splitPostBySentences(text, start):
     newResult = start + " " + part
     if len(newResult) > 4096:
       try:
-        await poster.send_message(chat, start)
+        await poster.send_message(CHAT_ID, start)
       except:
         logging.warning(f"не отправился большой текст \n {text}")
       start = part
@@ -69,14 +75,14 @@ async def splitPost(text):
     newResult = result + "\n" + part
     if len(newResult) > 4096:
       try:
-        await poster.send_message(chat, result)
+        await poster.send_message(CHAT_ID, result)
       except:
         logging.warning(f"не отправился большой текст \n {text}")
       result = part
       continue
     result = newResult
   if len(result) != 0:
-    await poster.send_message(chat, result)
+    await poster.send_message(CHAT_ID, result)
 
 #отправка текста
 async def textPost(text):
@@ -84,7 +90,7 @@ async def textPost(text):
     if len(text) > 4096:
       await splitPost(text)
       return
-    await poster.send_message(chat, text)
+    await poster.send_message(CHAT_ID, text)
   except:
     logging.warning(f"не отправился текст \n {text}")
     logging.warning(traceback.format_exc())
@@ -107,7 +113,7 @@ async def postMedia(docs, photos, text=None):
   print(result)
   for group in result:
     try:
-      await poster.send_media_group(chat, group)
+      await poster.send_media_group(CHAT_ID, group)
     except:
       logging.warning(f"проблемы с отправкой медиа")
       logging.warning(traceback.format_exc())
@@ -145,7 +151,7 @@ async def post(event):
   if poll is not None:
     answers = [a.text for a in poll.answers]
     try:
-      await poster.send_poll(chat, question=poll.question, options=answers, allows_multiple_answers=poll.multiple)
+      await poster.send_poll(CHAT_ID, question=poll.question, options=answers, allows_multiple_answers=poll.multiple)
     except:
       logging.warning("опрос не отправился")
       logging.warning(traceback.format_exc())
